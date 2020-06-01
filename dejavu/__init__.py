@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from __future__ import print_function
 import binascii
-import dejavu.decoder as decoder
+from . import decoder
 from . import fingerprint
 import logging
 import multiprocessing

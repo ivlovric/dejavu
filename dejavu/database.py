@@ -132,11 +132,14 @@ class Database(object):
 
         # Get an iterable of all the hashes we need
         values = [h for h in mapper.keys()]
-
-        for fingerprint in self.session.query(Fingerprint).filter(
-            Fingerprint.hash.in_(values)
-        ):
-            yield (fingerprint.song_id, fingerprint.offset - mapper[fingerprint.hash])
+        
+        for i in range(0, len(values), 500):
+            k = i + 500
+            tmp = values[i:k]
+            for fingerprint in self.session.query(Fingerprint).filter(
+                    Fingerprint.hash.in_(tmp)
+                    ):
+                yield (fingerprint.song_id, fingerprint.offset - mapper[fingerprint.hash])
 
     @retry(wait=wait_fixed(1),stop=stop_after_attempt(10))
     def __is_db_ready__(self, url):
