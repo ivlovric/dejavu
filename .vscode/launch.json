@@ -1,0 +1,15 @@
+{"version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Python: Current File",
+      "type": "python",
+      "request": "launch",
+      "program": "${file}",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+//      "args": ["-f", "./mp3/", "mp3"],
+      "args": ["--dburl", "sqlite:///db.sqlite3", "-r", "file", "mp3/The-Lights-Galaxia--While-She-Sleeps.mp3", "-l", "3"],
+      "purpose": ["debug-in-terminal"]
+    }
+  ]
+}

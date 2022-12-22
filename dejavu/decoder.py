@@ -54,7 +54,7 @@ def read(filename, limit=None):
         audiofile = AudioSegment.from_file(filename)
 
         if limit:
-            audiofile = audiofile[:limit * 1000]
+            audiofile = audiofile[:int(limit) * 1000]
 
         data = np.fromstring(audiofile._data, np.int16)
 
