@@ -9,3 +9,6 @@
 * avoid loading all hashes from database for reindexing check, use one-off query
 * add default [sqlite](https://sqlite.org/) database for testing if `DATABASE_URL` not set
 
+### 1.4
+* added simple HTTP REST api based on flask
+

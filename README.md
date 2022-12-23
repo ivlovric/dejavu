@@ -10,6 +10,9 @@ This fork attempts to:
 *   [:heavy_check_mark:] Support both Python3 and Python2.
 *   [WIP] Use the logging module so as to not litter any user's application with prints.
 *   [:heavy_check_mark:] Reformat code using YAPF (Facebook)
+*   [:heavy_check_mark:] Implement simple HTTP REST interface
+*   [:WIP:] Implement simple websocket interface
+
 
 ## Usage
 
@@ -38,7 +41,11 @@ export DATABASE_URL=mysql+mysqlconnector://bryan:password@localhost/dejavu
 python dejavu.py --fingerprint ~/Music mp3 --limit 30
 python dejavu.py --recognize mic 10
 python dejavu.py --recognize file sometrack.mp3
+python dejavu.py --network API
+
 ```
+
+For network usage, default TCP port is 4141. 
 
 You can keep the database url saved in an .env file and use pipenv. As
 well as specify it via the `--dburl` command line argument.
