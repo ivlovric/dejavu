@@ -129,7 +129,7 @@ class Database(object):
         # Create a dictionary of hash => offset pairs for later lookups
         mapper = {}
         for hash, offset in hashes:
-            mapper[binascii.b2a_base64(binascii.unhexlify(hash)) ] = offset
+                mapper[binascii.b2a_base64(binascii.unhexlify(hash)) ] = offset
 
         # Get an iterable of all the hashes we need
         values = [h for h in mapper.keys()]

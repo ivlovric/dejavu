@@ -41,6 +41,24 @@ class FileRecognizer(BaseRecognizer):
     def recognize(self, filename):
         return self.recognize_file(filename)
 
+class APIRecognizer(BaseRecognizer):
+    def __init__(self, dejavu):
+        super(APIRecognizer, self).__init__(dejavu)
+
+    def recognize_api(self, api_data):
+        frames, self.Fs = decoder.read_api(api_data, self.dejavu.limit)
+
+        t = time.time()
+        match = self._recognize(*frames)
+        t = time.time() - t
+
+        if match:
+            match['match_time'] = t
+
+        return match
+
+    def recognize(self, api_data):
+        return self.recognize_api(api_data)
 
 class MicrophoneRecognizer(BaseRecognizer):
     default_chunksize = 8192

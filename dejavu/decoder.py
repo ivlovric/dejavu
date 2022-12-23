@@ -7,7 +7,7 @@ from pydub.utils import audioop
 from . import wavio
 from hashlib import sha1
 from six.moves import range
-
+import io
 
 def unique_hash(filepath, blocksize=2**20):
     """ Small function to generate a hash to uniquely generate
@@ -77,6 +77,58 @@ def read(filename, limit=None):
             channels.append(chn)
 
     return channels, audiofile.frame_rate
+
+def read_api(api_data, limit=None):
+    """
+    Reads any file supported by pydub (ffmpeg) and returns the data contained
+    within. If file reading fails due to input being a 24-bit wav file,
+    wavio is used as a backup.
+
+    Can be optionally limited to a certain amount of seconds from the start
+    of the file by specifying the `limit` parameter. This is the amount of
+    seconds from the start of the file.
+
+    returns: (channels, samplerate)
+    """
+    # pydub does not support 24-bit wav files, use wavio when this occurs
+
+    #print("API DATA %s", api_data)
+
+    try:
+        print(type(api_data))
+
+        audiofile = AudioSegment(api_data, sample_width=2, frame_rate=44100, channels=1 )
+
+        print (type(audiofile))
+        if limit:
+            audiofile = audiofile[:int(limit) * 1000]
+
+        data = np.fromstring(audiofile._data, np.int16)
+        #data = np.frombuffer(audiofile, np.int16)
+        #data = audiofile
+
+        channels = []
+        for chn in range(audiofile.channels):
+            channels.append(data[chn::audiofile.channels])
+        #channels = data
+
+        fs = audiofile.frame_rate
+        #fs = 128
+    except audioop.error:
+        fs, _, audiofile = wavio.readwav(api_data)
+
+        if limit:
+            audiofile = audiofile[:limit * 1000]
+
+        audiofile = audiofile.T
+        audiofile = audiofile.astype(np.int16)
+
+        channels = []
+        for chn in audiofile:
+            channels.append(chn)
+
+    #return channels, audiofile.frame_rate
+    return channels, fs
 
 
 def path_to_songname(path):

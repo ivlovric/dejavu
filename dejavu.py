@@ -5,16 +5,66 @@ import sys
 import warnings
 import argparse
 
+from flask import Flask, jsonify, request, current_app, render_template, flash, redirect, url_for
+from werkzeug.utils import secure_filename
+#from werkzeug.datastructures import  FileStorage
+import magic
+#import pandas as pd
+import logging
+
 from dejavu import Dejavu
 from dejavu.recognize import FileRecognizer
 from dejavu.recognize import MicrophoneRecognizer
+from dejavu.recognize import APIRecognizer
+
 from dejavu.version import __version__
 from argparse import RawTextHelpFormatter
 
 warnings.filterwarnings("ignore")
 
 
+app = Flask(__name__)
+app.config.from_object(__name__)
+
+ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif','mp3'])
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+@app.route('/upload', methods=['GET', 'POST'])
+def upload_file():
+    # check if the post request has the file part
+
+    if 'file' not in request.files:
+        resp = jsonify({'message' : 'No file part in the request'})
+        resp.status_code = 400
+        return resp
+    file = request.files['file']
+    if file.filename == '':
+        resp = jsonify({'message' : 'No file selected for uploading'})
+        resp.status_code = 400
+        return resp
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        file = request.files.get('file') 
+        filetype = magic.from_buffer(file.read(1024))
+        ###########print (file.read())
+        #djv.fingerprint_API(file.read())
+        print("running API recognizer")
+        #song = djv.recognize(FileRecognizer)
+        song = djv.recognize(APIRecognizer,file.read())
+        resp = jsonify({'message' : song})
+        resp.status_code = 201
+        return resp
+
+    else:
+        resp = jsonify({'message' : 'Allowed file types are txt, pdf, png, jpg, jpeg, gif'})
+        resp.status_code = 400
+        return resp
+
 if __name__ == '__main__':
+
     parser = argparse.ArgumentParser(
         description="Dejavu: Audio Fingerprinting library",
         formatter_class=RawTextHelpFormatter
@@ -42,10 +92,19 @@ if __name__ == '__main__':
         '-r',
         '--recognize',
         nargs=2,
-        help='Recognize what is playing through the microphone\n'
+        help='Recognize what is playing through the microphone or file\n'
         'Usage: \n'
         '--recognize mic number_of_seconds \n'
         '--recognize file path/to/file \n'
+    )
+    parser.add_argument(
+        '-n',
+        '--network',
+        nargs=1,
+        help='Recognize what is sent over HTTP\n'
+        'Usage: \n'
+        '--network API data\n'
+
     )
     parser.add_argument(
         '-l',
@@ -67,7 +126,7 @@ if __name__ == '__main__':
     if not args.dburl:
         args.dburl = os.environ['DATABASE_URL']
 
-    if not args.fingerprint and not args.recognize:
+    if not args.fingerprint and not args.recognize and not args.network:
         parser.print_help()
         sys.exit(0)
 
@@ -103,5 +162,19 @@ if __name__ == '__main__':
         elif source == 'file':
             song = djv.recognize(FileRecognizer, opt_arg)
         print(song)
+
+    elif args.network:
+        # Recognize audio source
+        song = None
+        source = args.network[0]
+        #opt_arg = args.network[1]
+
+        if source == 'API':
+            logging.basicConfig(filename='fngrprntr.log',level=logging.DEBUG)
+
+        #time_started = datetime.datetime.now()
+            app.run(debug=False,host='0.0.0.0', port=4141)
+            #song = djv.recognize(APIRecognizer)
+        #print(song)
 
     sys.exit(0)

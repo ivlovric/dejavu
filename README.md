@@ -16,7 +16,7 @@ This fork attempts to:
 1.  Install directly from this repo:
 
 ```commandline
-pip install -e git+https://github.com/bcollazo/dejavu@v1.2#egg=PyDejavu
+pip install -e git+https://github.com/ivlovric/dejavu@1.3.4#egg=PyDejavu
 ```
 
 2.  Import and use:
