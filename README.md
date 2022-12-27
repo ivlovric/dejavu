@@ -11,7 +11,7 @@ This fork attempts to:
 *   [:heavy_check_mark:] Use the logging module so as to not litter any user's application with prints.
 *   [:heavy_check_mark:] Reformat code using YAPF (Facebook)
 *   [:heavy_check_mark:] Implement simple HTTP REST interface
-*   [:WIP:] Implement simple websocket interface
+*   [:heavy_check_mark:] Implement simple websocket interface
 
 
 ## Usage
