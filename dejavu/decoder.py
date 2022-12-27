@@ -10,7 +10,7 @@ import logging
 import magic
 import io
 
-#l = logging.getLogger("pydub")
+l = logging.getLogger("pydub")
 ##l = logging.getLogger("magic")
 #l.setLevel(logging.DEBUG)
 #l.addHandler(logging.StreamHandler())
@@ -120,18 +120,18 @@ def read_api(api_data, limit=None):
             print(type(api_data))
             #print(api_data[0:7000])
 
+            try:
+                filetype = magic.from_buffer(api_data)
+                l.info(filetype)
+            except Exception as err:
+                l.info(f"Unexpected {err=}, {type(err)=}")
+
             audiofile = AudioSegment.from_file(io.BytesIO(api_data))
             #audiofile = AudioSegment.from_raw(io.BytesIO(api_data) , sample_width=2, frame_rate=8000, channels=1 )
 
             print("Frame rate:", audiofile.frame_rate)
             print("Channels:", audiofile.channels)
             print("Sample width:", audiofile.sample_width)
-
-            try:
-                filetype = magic.from_buffer(api_data)
-                l.info(filetype)
-            except Exception as err:
-                l.info(f"Unexpected {err=}, {type(err)=}")
 
         except Exception as err:
             l.info(f"Unexpected {err=}, {type(err)=}")
