@@ -3,6 +3,9 @@ from __future__ import unicode_literals
 import os
 import numpy as np
 import matplotlib.mlab as mlab
+from librosa.feature import melspectrogram
+from librosa.util import buf_to_float
+from librosa.core import power_to_db
 import matplotlib.pyplot as plt
 from scipy.ndimage.filters import maximum_filter
 from scipy.ndimage.morphology import (
@@ -10,8 +13,7 @@ from scipy.ndimage.morphology import (
 )
 import hashlib
 from operator import itemgetter
-from six.moves import range
-from six.moves import zip
+import logging
 
 IDX_FREQ_I = 0
 IDX_TIME_J = 1
@@ -19,7 +21,7 @@ IDX_TIME_J = 1
 ######################################################################
 # Sampling rate, related to the Nyquist conditions, which affects
 # the range frequencies we can detect.
-DEFAULT_FS = os.getenv('DEFAULT_FS', 44100)
+DEFAULT_FS = os.getenv('DEFAULT_FS', 8000)
 
 ######################################################################
 # Size of the FFT window, affects frequency granularity
@@ -34,19 +36,19 @@ DEFAULT_OVERLAP_RATIO = os.getenv('DEFAULT_OVERLAP_RATIO', 0.5)
 ######################################################################
 # Degree to which a fingerprint can be paired with its neighbors --
 # higher will cause more fingerprints, but potentially better accuracy.
-DEFAULT_FAN_VALUE = os.getenv('DEFAULT_FAN_VALUE', 15)
+DEFAULT_FAN_VALUE = os.getenv('DEFAULT_FAN_VALUE', 40)
 
 ######################################################################
 # Minimum amplitude in spectrogram in order to be considered a peak.
 # This can be raised to reduce number of fingerprints, but can negatively
 # affect accuracy.
-DEFAULT_AMP_MIN = os.getenv('DEFAULT_AMP_MIN', 10)
+DEFAULT_AMP_MIN = os.getenv('DEFAULT_AMP_MIN', 15)
 
 ######################################################################
 # Number of cells around an amplitude peak in the spectrogram in order
 # for Dejavu to consider it a spectral peak. Higher values mean less
 # fingerprints and faster matching, but can potentially affect accuracy.
-PEAK_NEIGHBORHOOD_SIZE = os.getenv('PEAK_NEIGHBORHOOD_SIZE', 20)
+PEAK_NEIGHBORHOOD_SIZE = os.getenv('PEAK_NEIGHBORHOOD_SIZE', 7)
 
 ######################################################################
 # Thresholds on how close or far fingerprints can be in time in order
@@ -67,6 +69,16 @@ PEAK_SORT = True
 # potentially higher collisions and misclassifications when identifying songs.
 FINGERPRINT_REDUCTION = os.getenv('FINGERPRINT_REDUCTION', 20)
 
+######################################################################
+# Min and max frequency to compute melspectrogram
+MIN_FREQ = 300
+MAX_FREQ = 3500
+######################################################################
+
+######################################################################
+# Number of Mel bands to generate
+N_MELS = 160
+
 
 def fingerprint(
     channel_samples,
@@ -81,6 +93,18 @@ def fingerprint(
     locally sensitive hashes.
     """
     # FFT the signal and extract frequency components
+#    arr2D = melspectrogram(
+#            np.float32(channel_samples),
+#            sr=Fs,
+#            fmin=MIN_FREQ,
+#            n_mels=N_MELS,
+#            n_fft=wsize,
+#            hop_length=int(wsize * wratio),
+#            window="hann"
+#       )
+#    print(arr2D)
+
+
     arr2D = mlab.specgram(
         channel_samples,
         NFFT=wsize,
@@ -90,9 +114,11 @@ def fingerprint(
     )[0]
 
     # apply log transform since specgram() returns linear array
+    #arr2D = power_to_db(arr2D)
     arr2D = 10 * np.log10(arr2D)
     arr2D[arr2D == -np.inf] = 0  # replace infs with zeros
 
+#    plt.imshow(arr2D)
     # find local maxima
     local_maxima = get_2D_peaks(arr2D, plot=False, amp_min=amp_min)
 

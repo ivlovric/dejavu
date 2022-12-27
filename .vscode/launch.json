@@ -7,9 +7,11 @@
       "program": "${file}",
       "console": "integratedTerminal",
       "justMyCode": true,
-//      "args": ["-f", "./mp3/", "mp3"],
-//      "args": ["--dburl", "sqlite:///db.sqlite3", "-r", "file", "mp3/The-Lights-Galaxia--While-She-Sleeps.mp3", "-l", "3"],
-      "args": ["--dburl", "sqlite:///db.sqlite3", "-n", "API", "-l", "5"],
+//      "args": ["--dburl", "sqlite:///db.sqlite3", "-f", "./mp3/", "vaw"],
+//      "args": ["--dburl", "sqlite:///db.sqlite3", "-r", "file", "dejavu/machine3.wav", "-l", "3"],
+      "args": ["--dburl", "sqlite:///db.sqlite3", "-n", "http", "-l", "3"],
+//      "args": ["--dburl", "sqlite:///db.sqlite3", "-n", "ws", "-l", "3"],
+
 
       "purpose": ["debug-in-terminal"]
     }

@@ -5,61 +5,83 @@ import sys
 import warnings
 import argparse
 
-from flask import Flask, jsonify, request, current_app, render_template, flash, redirect, url_for
-from werkzeug.utils import secure_filename
-#from werkzeug.datastructures import  FileStorage
+from flask import Flask, jsonify, request
 import magic
-#import pandas as pd
 import logging
+import asyncio
+from websockets import serve
 
 from dejavu import Dejavu
 from dejavu.recognize import FileRecognizer
 from dejavu.recognize import MicrophoneRecognizer
 from dejavu.recognize import APIRecognizer
+from dejavu.recognize import WSRecognizer
 
 from dejavu.version import __version__
 from argparse import RawTextHelpFormatter
 
 warnings.filterwarnings("ignore")
-
+logging.basicConfig(filename='dejavu.log',level=logging.INFO)
+logging.getLogger("magic")
+#l.addHandler(logging.StreamHandler())
 
 app = Flask(__name__)
 app.config.from_object(__name__)
 
-ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif','mp3'])
+ALLOWED_EXTENSIONS = set(['wav','mp3'])
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-
 @app.route('/upload', methods=['GET', 'POST'])
 def upload_file():
     # check if the post request has the file part
+    dat = request.get_data()
+    #print(dat)
+    file = request.files
+    if file:
+        if 'file' not in request.files:
+            resp = jsonify({'message' : 'No data in request. Send either form-data with key "file" or raw binary data'})
+            resp.status_code = 400
+            return resp
+        file = request.files['file'] 
+        if file.filename == '':
+            resp = jsonify({'message' : 'No data selected for uploading'})
+            resp.status_code = 400
+            return resp
+        if file and allowed_file(file.filename):
+        
+            #file = io.TextIOWrapper(request.files['file'])
+            file = request.files.get('file') 
+            filetype = magic.from_buffer(file.read(2024))
+            logging.info(filetype)
 
-    if 'file' not in request.files:
-        resp = jsonify({'message' : 'No file part in the request'})
-        resp.status_code = 400
-        return resp
-    file = request.files['file']
-    if file.filename == '':
-        resp = jsonify({'message' : 'No file selected for uploading'})
-        resp.status_code = 400
-        return resp
-    if file and allowed_file(file.filename):
-        filename = secure_filename(file.filename)
-        file = request.files.get('file') 
-        filetype = magic.from_buffer(file.read(1024))
-        ###########print (file.read())
-        #djv.fingerprint_API(file.read())
-        print("running API recognizer")
-        #song = djv.recognize(FileRecognizer)
-        song = djv.recognize(APIRecognizer,file.read())
+            ###########print (file.read())
+            print("Request for HTTP recognizer received")
+            file.seek(0)
+            song = djv.recognize(APIRecognizer,file.read())
+            resp = jsonify({'message' : song})
+            resp.status_code = 201
+            return resp
+
+        else:
+            resp = jsonify({'message' : 'Allowed file types are wav, mp3'})
+            resp.status_code = 400
+            return resp
+    elif dat:
+        #filetype = magic.from_buffer(dat.read(2024))
+        #logging.info(filetype)
+
+        print("Request for HTTP recognizer received")
+        print(type(dat))
+        #dat2=bytes(dat,'UTF-16')
+        #dat.seek(0)
+        song = djv.recognize(APIRecognizer,dat)
         resp = jsonify({'message' : song})
         resp.status_code = 201
         return resp
-
     else:
-        resp = jsonify({'message' : 'Allowed file types are txt, pdf, png, jpg, jpeg, gif'})
+        resp = jsonify({'message' : 'No correct data sent'})
         resp.status_code = 400
         return resp
 
@@ -101,9 +123,11 @@ if __name__ == '__main__':
         '-n',
         '--network',
         nargs=1,
-        help='Recognize what is sent over HTTP\n'
+        help='Recognize what is sent over HTTP or websocket\n'
         'Usage: \n'
-        '--network API data\n'
+        '--network http data\n'
+        '--network ws data\n'
+
 
     )
     parser.add_argument(
@@ -116,6 +140,7 @@ if __name__ == '__main__':
         '--limit number_of_seconds \n'
     )
     parser.add_argument(
+        '-v',
         '--version',
         action='version',
         version=__version__
@@ -167,14 +192,42 @@ if __name__ == '__main__':
         # Recognize audio source
         song = None
         source = args.network[0]
-        #opt_arg = args.network[1]
 
-        if source == 'API':
-            logging.basicConfig(filename='fngrprntr.log',level=logging.DEBUG)
-
-        #time_started = datetime.datetime.now()
+        if source == 'http':
+            # HTTP Server
             app.run(debug=False,host='0.0.0.0', port=4141)
-            #song = djv.recognize(APIRecognizer)
-        #print(song)
+        
+        elif source == 'ws':
+            # Websocket Server
+            WS_PORT = 4242
+            async def match(websocket):
+                async for message in websocket:
+                    print("Request for Websocket recognizer received")
+                    #print(type(message))
 
+                    try:
+                        #song = djv.recognize(WSRecognizer,str.encode(message))
+                        if type(message) == bytes:
+                            song = djv.recognize(WSRecognizer,message)
+                            try:
+                                if song is None:
+                                    await websocket.send("No result")
+                                else: await websocket.send(song['match'])
+                            except Exception as err:
+                                print("Could not send response to client", err)
+                        else:
+                            await websocket.send("Please send byte encoded data")
+
+                    except Exception as e:
+                        print(e)
+                        await websocket.send("Error getting result, please check your input")
+                   
+            async def main():
+                async with serve(match, "0.0.0.0", str(WS_PORT)):
+                    print("Websocket Server listening on Port " + str(WS_PORT))
+
+                    await asyncio.Future()  # run forever
+
+            asyncio.run(main())
+    
     sys.exit(0)

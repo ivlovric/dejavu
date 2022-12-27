@@ -4,8 +4,6 @@ import dejavu.decoder as decoder
 import numpy as np
 import pyaudio
 import time
-from six.moves import range
-
 
 class BaseRecognizer(object):
     def __init__(self, dejavu):
@@ -59,6 +57,25 @@ class APIRecognizer(BaseRecognizer):
 
     def recognize(self, api_data):
         return self.recognize_api(api_data)
+
+class WSRecognizer(BaseRecognizer):
+    def __init__(self, dejavu):
+        super(WSRecognizer, self).__init__(dejavu)
+
+    def recognize_ws(self, ws_data):
+        frames, self.Fs = decoder.read_ws(ws_data, self.dejavu.limit)
+
+        t = time.time()
+        match = self._recognize(*frames)
+        t = time.time() - t
+
+        if match:
+            match['match_time'] = t
+
+        return match
+
+    def recognize(self, ws_data):
+        return self.recognize_ws(ws_data)
 
 class MicrophoneRecognizer(BaseRecognizer):
     default_chunksize = 8192

@@ -130,6 +130,7 @@ class Database(object):
         mapper = {}
         for hash, offset in hashes:
                 mapper[binascii.b2a_base64(binascii.unhexlify(hash)) ] = offset
+                #print(hash)
 
         # Get an iterable of all the hashes we need
         values = [h for h in mapper.keys()]
@@ -141,6 +142,8 @@ class Database(object):
                     Fingerprint.hash.in_(tmp)
                     ):
                 yield (fingerprint.song_id, fingerprint.offset - mapper[fingerprint.hash])
+        #print("mapper %s", mapper)
+        #print(hashes)
 
     @retry(wait=wait_fixed(1),stop=stop_after_attempt(10))
     def __is_db_ready__(self, url):

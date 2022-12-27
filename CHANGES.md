@@ -12,3 +12,6 @@
 ### 1.4
 * added simple HTTP REST api based on flask
 
+### 1.5
+* added simple websocket server
+* added logging to file

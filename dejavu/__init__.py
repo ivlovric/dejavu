@@ -10,8 +10,6 @@ import traceback
 import sys
 
 from dejavu.database import Database
-from six.moves import range
-from six.moves import zip
 
 logger = logging.getLogger(__name__)
 
@@ -104,6 +102,7 @@ class Dejavu(object):
 
     def find_matches(self, samples, Fs=fingerprint.DEFAULT_FS):
         hashes = fingerprint.fingerprint(samples, Fs=Fs)
+        print("samples %s", samples)
         return self.db.return_matches(hashes)
 
     def align_matches(self, matches):
@@ -145,8 +144,8 @@ class Dejavu(object):
             5
         )
         song = {
-            'song_id': song_id,
-            'song_name': songname,
+            'id': song_id,
+            'match': songname,
             Dejavu.CONFIDENCE: largest_count,
             Dejavu.OFFSET: int(largest),
             'offset_seconds': nseconds,
