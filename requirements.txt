@@ -13,4 +13,10 @@ pytz==2018.5
 scipy==1.1.0
 six==1.11.0
 SQLAlchemy==1.2.9
+SQLAlchemy-utils==0.39.0
 python_magic==0.4.27
+flask==1.1.4
+asyncio==3.4.3
+websockets==10.4
+#librosa==0.9.2
+tenacity==8.1.0
